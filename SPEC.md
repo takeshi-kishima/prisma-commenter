@@ -7,8 +7,9 @@ Prisma schema ファイル (`schema.prisma`) に記載された `///` ドキュ�
 - データベース設計では、テーブルやカラムに「論理名」を付与するのが一般的（例: `created_at` → 作成日時）
 - Prisma の `///` コメントは Prisma Client の JSDoc にのみ反映され、DBには反映されない
 - `prisma migrate` / `prisma db push` は `COMMENT ON` 文を生成しない
-- 逆方向（DB → schema）は `prisma db pull` が v4.17+ でネイティブ対応済み
-- **このツールは schema → DB 方向のギャップを埋める**
+- 逆方向（DB → schema）は `prisma db pull` では対応していない（未実装: prisma/prisma#8896）
+- さらに `prisma db pull` は既存の `///` コメントを消してしまう
+- **このツールは双方向のギャップを埋める（push: schema→DB, pull: DB→schema）**
 
 ## 対象ユーザー
 - Prisma を使用している開発チーム
@@ -46,13 +47,24 @@ Prisma schema ファイル (`schema.prisma`) に記載された `///` ドキュ�
 - 接続エラー・実行エラーを分かりやすく表示する
 
 ### F5: CLI インターフェース
-- `npx prisma-commenter` で実行可能
+- `npx prisma-commenter push` でschema→DB方向を実行（デフォルトコマンド）
+- `npx prisma-commenter pull` でDB→schema方向を実行
 - `--schema <path>`: schema.prisma のパス指定（デフォルト: `./prisma/schema.prisma`）
-- `--dry-run`: SQL文の出力のみ、実行しない
-- `--verbose`: 実行中の各SQL文を表示
+- `--dry-run`: push時はSQL出力のみ、pull時はschema変更のプレビューのみ
+- `--verbose`: 実行中の詳細を表示
 - `--schema-name <name>`: PostgreSQL スキーマ名（デフォルト: `public`）
 - `--version`: バージョン表示
 - `--help`: ヘルプ表示
+
+### F6: pull — DBコメントをschema.prismaに反映
+- DBに接続し、テーブルコメントとカラムコメントを取得する
+- PostgreSQL: `pg_description` / `col_description()` から取得
+- MySQL: `INFORMATION_SCHEMA.TABLES.TABLE_COMMENT` / `INFORMATION_SCHEMA.COLUMNS.COLUMN_COMMENT` から取得
+- 取得したコメントをschema.prismaの該当モデル・フィールドの直前に `///` として挿入する
+- 既存の `///` コメントがある場合は上書きする
+- `@map` / `@@map` によるDB名マッピングを考慮する
+- リレーションフィールドはスキップする
+- `--dry-run` 時は変更内容をプレビュー表示し、ファイルは書き換えない
 
 ## 非機能要件
 - コメント内のSQLインジェクション対策（適切なエスケープ）

@@ -14,42 +14,61 @@ describe("createProgram", () => {
     expect(program.version()).toBe("0.1.0");
   });
 
-  it("has default option values", () => {
+  it("has push and pull subcommands", () => {
     const program = createProgram();
-    program.parse(["node", "prisma-commenter"]);
-    const opts = program.opts();
+    const commandNames = program.commands.map((c) => c.name());
+    expect(commandNames).toContain("push");
+    expect(commandNames).toContain("pull");
+  });
+
+  it("push subcommand has default option values", () => {
+    const program = createProgram();
+    const pushCmd = program.commands.find((c) => c.name() === "push")!;
+    pushCmd.parse([], { from: "user" });
+    const opts = pushCmd.opts();
     expect(opts.schema).toBe("./prisma/schema.prisma");
     expect(opts.dryRun).toBe(false);
     expect(opts.verbose).toBe(false);
     expect(opts.schemaName).toBe("public");
   });
 
-  it("parses --dry-run flag", () => {
+  it("push subcommand parses --dry-run flag", () => {
     const program = createProgram();
-    program.parse(["node", "prisma-commenter", "--dry-run"]);
-    expect(program.opts().dryRun).toBe(true);
+    const pushCmd = program.commands.find((c) => c.name() === "push")!;
+    pushCmd.parse(["--dry-run"], { from: "user" });
+    expect(pushCmd.opts().dryRun).toBe(true);
   });
 
-  it("parses --verbose flag", () => {
+  it("push subcommand parses --verbose flag", () => {
     const program = createProgram();
-    program.parse(["node", "prisma-commenter", "--verbose"]);
-    expect(program.opts().verbose).toBe(true);
+    const pushCmd = program.commands.find((c) => c.name() === "push")!;
+    pushCmd.parse(["--verbose"], { from: "user" });
+    expect(pushCmd.opts().verbose).toBe(true);
   });
 
-  it("parses --schema option", () => {
+  it("push subcommand parses --schema option", () => {
     const program = createProgram();
-    program.parse([
-      "node", "prisma-commenter", "--schema", "/tmp/schema.prisma",
-    ]);
-    expect(program.opts().schema).toBe("/tmp/schema.prisma");
+    const pushCmd = program.commands.find((c) => c.name() === "push")!;
+    pushCmd.parse(["--schema", "/tmp/schema.prisma"], { from: "user" });
+    expect(pushCmd.opts().schema).toBe("/tmp/schema.prisma");
   });
 
-  it("parses --schema-name option", () => {
+  it("push subcommand parses --schema-name option", () => {
     const program = createProgram();
-    program.parse([
-      "node", "prisma-commenter", "--schema-name", "myschema",
-    ]);
-    expect(program.opts().schemaName).toBe("myschema");
+    const pushCmd = program.commands.find((c) => c.name() === "push")!;
+    pushCmd.parse(["--schema-name", "myschema"], { from: "user" });
+    expect(pushCmd.opts().schemaName).toBe("myschema");
+  });
+
+  it("pull subcommand has default option values", () => {
+    const program = createProgram();
+    const pullCmd = program.commands.find((c) => c.name() === "pull")!;
+    pullCmd.parse([], { from: "user" });
+    const opts = pullCmd.opts();
+    expect(opts.schema).toBe("./prisma/schema.prisma");
+    expect(opts.dryRun).toBe(false);
+    expect(opts.verbose).toBe(false);
+    expect(opts.schemaName).toBe("public");
   });
 });
 
@@ -84,6 +103,7 @@ describe("run() dry-run PostgreSQL", () => {
     await run([
       "node",
       "prisma-commenter",
+      "push",
       "--schema",
       schemaPath,
       "--dry-run",
@@ -109,11 +129,23 @@ describe("run() dry-run PostgreSQL", () => {
     expect(output.some((line: string) => line.includes("statement(s) generated"))).toBe(true);
   });
 
+  it("requires a subcommand (push or pull)", () => {
+    const program = createProgram();
+    // Verify push is not the default command
+    const pushCmd = program.commands.find((c) => c.name() === "push");
+    const pullCmd = program.commands.find((c) => c.name() === "pull");
+    expect(pushCmd).toBeDefined();
+    expect(pullCmd).toBeDefined();
+    // No default command — both must be explicitly specified
+    expect(program.commands.some((c) => (c as any)._isDefault)).toBe(false);
+  });
+
   it("uses custom schema-name for PostgreSQL", async () => {
     const schemaPath = resolve(fixturesDir, "basic.prisma");
     await run([
       "node",
       "prisma-commenter",
+      "push",
       "--schema",
       schemaPath,
       "--dry-run",
@@ -131,6 +163,7 @@ describe("run() dry-run PostgreSQL", () => {
     await run([
       "node",
       "prisma-commenter",
+      "push",
       "--schema",
       "/nonexistent/schema.prisma",
       "--dry-run",
@@ -147,6 +180,7 @@ describe("run() dry-run PostgreSQL", () => {
     await run([
       "node",
       "prisma-commenter",
+      "push",
       "--schema",
       schemaPath,
       "--dry-run",
@@ -178,21 +212,25 @@ describe("run() dry-run MySQL", () => {
     process.exitCode = undefined;
   });
 
-  it("outputs MySQL ALTER TABLE COMMENT in dry-run mode (connection error is expected for column defs)", async () => {
+  it("outputs MySQL ALTER TABLE COMMENT in dry-run mode (falls back when DB unreachable)", async () => {
     const schemaPath = resolve(fixturesDir, "mysql.prisma");
-    // MySQL dry-run requires DB connection for INFORMATION_SCHEMA.
-    // Since there's no real DB, this will fail with a connection error.
+    // MySQL dry-run tries DB connection for INFORMATION_SCHEMA.
+    // When DB is unreachable, it falls back to table-only comments.
     await run([
       "node",
       "prisma-commenter",
+      "push",
       "--schema",
       schemaPath,
       "--dry-run",
     ]);
 
-    // Expect a connection error since we can't reach the MySQL DB
-    expect(process.exitCode).toBe(1);
-    expect(errorSpy).toHaveBeenCalled();
+    // Should succeed with table-only comments (column comments skipped)
+    const output = logSpy.mock.calls.map((c) => c[0]);
+    expect(output).toContain(
+      "ALTER TABLE `User` COMMENT = 'Users table';",
+    );
+    expect(output.some((line: string) => line.includes("statement(s) generated"))).toBe(true);
   });
 });
 
@@ -217,6 +255,7 @@ describe("run() dry-run with no comments", () => {
     await run([
       "node",
       "prisma-commenter",
+      "push",
       "--schema",
       schemaPath,
       "--dry-run",

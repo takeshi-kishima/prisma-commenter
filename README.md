@@ -1,8 +1,13 @@
 # prisma-commenter
 
-Sync Prisma schema `///` doc comments to database `COMMENT ON` / `ALTER TABLE ... COMMENT` statements.
+Sync Prisma schema `///` doc comments to database comments, and vice versa.
 
-Prisma's `///` documentation comments are only used for JSDoc generation in the Prisma Client. They are **not** reflected in the actual database. This CLI tool bridges that gap by reading your `schema.prisma` and applying comments directly to your PostgreSQL or MySQL database.
+Prisma's `///` documentation comments are only used for JSDoc generation in the Prisma Client. They are **not** reflected in the actual database. Additionally, `prisma db pull` does **not** read database comments back into `///`, and even **removes** existing `///` comments.
+
+This CLI tool bridges that gap in both directions:
+
+- **push**: schema.prisma `///` → DB `COMMENT ON`
+- **pull**: DB `COMMENT ON` → schema.prisma `///`
 
 ## Installation
 
@@ -13,61 +18,86 @@ npm install -D prisma-commenter
 Or run directly with npx:
 
 ```bash
-npx prisma-commenter --dry-run
+npx prisma-commenter push --dry-run
 ```
 
 ## Usage
 
 ```bash
-npx prisma-commenter [options]
+npx prisma-commenter <command> [options]
 ```
+
+### Commands
+
+| Command | Description |
+|---|---|
+| `push` | Apply `///` comments from schema.prisma to the database (default) |
+| `pull` | Read database comments and write them as `///` into schema.prisma |
 
 ### Options
 
 | Option | Description | Default |
 |---|---|---|
 | `--schema <path>` | Path to `schema.prisma` file | `./prisma/schema.prisma` |
-| `--dry-run` | Output generated SQL without executing | `false` |
-| `--verbose` | Print each SQL statement during execution | `false` |
+| `--dry-run` | Preview changes without applying | `false` |
+| `--verbose` | Print detailed output | `false` |
 | `--schema-name <name>` | PostgreSQL schema name | `public` |
 | `--version` | Show version number | |
 | `--help` | Show help | |
 
 ### Examples
 
-Preview the SQL that would be executed:
+**Push: schema → DB**
 
 ```bash
-npx prisma-commenter --dry-run
+# Preview SQL
+npx prisma-commenter push --dry-run
+
+# Apply to database
+npx prisma-commenter push
 ```
 
-Apply comments to the database:
+**Pull: DB → schema**
 
 ```bash
-npx prisma-commenter
+# Preview changes to schema.prisma
+npx prisma-commenter pull --dry-run
+
+# Write /// comments into schema.prisma
+npx prisma-commenter pull
 ```
 
-Use a custom schema path and PostgreSQL schema:
+## Recommended Workflow
 
 ```bash
-npx prisma-commenter --schema ./db/schema.prisma --schema-name myschema
+# 1. After prisma db pull (which removes /// comments)
+prisma db pull
+npx prisma-commenter pull     # Restore /// from DB comments
+
+# 2. Edit /// comments in schema.prisma
+
+# 3. Push comments to DB
+npx prisma-commenter push
+
+# 4. After prisma migrate
+prisma migrate dev
+npx prisma-commenter push     # Apply comments to new tables/columns
 ```
 
-Verbose output showing each statement:
+### package.json scripts
 
-```bash
-npx prisma-commenter --verbose
+```json
+{
+  "scripts": {
+    "db:migrate": "prisma migrate dev && npx prisma-commenter push",
+    "db:pull": "prisma db pull && npx prisma-commenter pull",
+    "db:comment:push": "npx prisma-commenter push",
+    "db:comment:pull": "npx prisma-commenter pull",
+    "db:comment:dry": "npx prisma-commenter push --dry-run",
+    "db:comment:preview": "npx prisma-commenter pull --dry-run"
+  }
+}
 ```
-
-## How It Works
-
-1. Parses your `schema.prisma` file using `@mrleebo/prisma-ast`
-2. Extracts `///` doc comments attached to models, views, and fields
-3. Reads the `datasource` block to determine the database provider and connection URL
-4. Generates the appropriate SQL:
-   - **PostgreSQL**: `COMMENT ON TABLE` / `COMMENT ON COLUMN` statements
-   - **MySQL**: `ALTER TABLE ... COMMENT` / `ALTER TABLE ... MODIFY COLUMN ... COMMENT` statements
-5. Executes the SQL against your database (or prints it in `--dry-run` mode)
 
 ## Schema Example
 
@@ -87,7 +117,7 @@ model User {
 }
 ```
 
-Running `npx prisma-commenter --dry-run` with a PostgreSQL datasource produces:
+Running `npx prisma-commenter push --dry-run` with a PostgreSQL datasource produces:
 
 ```sql
 COMMENT ON TABLE "public"."users" IS 'Users table';
