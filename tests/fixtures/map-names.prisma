@@ -1,0 +1,29 @@
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://localhost:5432/test"
+}
+
+/// User account
+model User {
+  /// User ID
+  id       Int    @id @default(autoincrement())
+  /// Email address
+  email    String @unique @map("email_address")
+  /// Full name
+  fullName String @map("full_name")
+  posts    Post[]
+
+  @@map("app_users")
+}
+
+/// Articles
+model Post {
+  /// Post ID
+  id       Int    @id @default(autoincrement())
+  /// Article title
+  title    String
+  authorId Int    @map("author_id")
+  author   User   @relation(fields: [authorId], references: [id])
+
+  @@map("articles")
+}

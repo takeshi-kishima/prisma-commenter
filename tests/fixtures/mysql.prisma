@@ -1,0 +1,12 @@
+datasource db {
+  provider = "mysql"
+  url      = "mysql://root:password@localhost:3306/test"
+}
+
+/// Users table
+model User {
+  /// User ID
+  id    Int    @id @default(autoincrement())
+  /// Email address
+  email String @unique
+}

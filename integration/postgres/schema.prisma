@@ -1,0 +1,108 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+/// ユーザー情報
+model User {
+  /// ユーザーID
+  id        Int      @id @default(autoincrement())
+  /// メールアドレス
+  email     String   @unique
+  /// 表示名
+  name      String?
+  /// 作成日時
+  createdAt DateTime @default(now()) @map("created_at")
+  /// 更新日時
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  posts    Post[]
+  profile  Profile?
+
+  @@map("users")
+}
+
+/// ブログ記事
+model Post {
+  /// 記事ID
+  id          Int      @id @default(autoincrement())
+  /// 記事タイトル
+  title       String
+  /// 記事本文
+  content     String?
+  /// 公開フラグ
+  published   Boolean  @default(false)
+  /// 作成日時
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  /// 著者ID
+  authorId    Int      @map("author_id")
+  author      User     @relation(fields: [authorId], references: [id])
+
+  categories  CategoryPost[]
+
+  @@map("posts")
+}
+
+/// ユーザープロフィール
+model Profile {
+  /// プロフィールID
+  id     Int     @id @default(autoincrement())
+  /// 自己紹介
+  bio    String?
+  /// ユーザーID
+  userId Int     @unique @map("user_id")
+  user   User    @relation(fields: [userId], references: [id])
+
+  @@map("profiles")
+}
+
+/// カテゴリ
+model Category {
+  /// カテゴリID
+  id    Int            @id @default(autoincrement())
+  /// カテゴリ名
+  name  String         @unique
+
+  posts CategoryPost[]
+
+  @@map("categories")
+}
+
+/// 記事カテゴリ中間テーブル
+model CategoryPost {
+  /// 記事ID
+  postId     Int      @map("post_id")
+  /// カテゴリID
+  categoryId Int      @map("category_id")
+
+  post       Post     @relation(fields: [postId], references: [id])
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  @@id([postId, categoryId])
+  @@map("category_posts")
+}
+
+/// 監査ログ
+model AuditLog {
+  /// ログID
+  id        Int      @id @default(autoincrement())
+  /// 操作内容
+  action    String
+  /// 操作日時
+  timestamp DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+/// 無視されるモデル
+model IgnoredModel {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  @@ignore
+}

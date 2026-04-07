@@ -1,0 +1,14 @@
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://localhost:5432/test"
+}
+
+/// User model
+/// Stores application users
+model User {
+  /// Unique identifier
+  /// Auto-incremented
+  id    Int    @id @default(autoincrement())
+  /// User email
+  email String @unique
+}

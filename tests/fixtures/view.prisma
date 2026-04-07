@@ -1,0 +1,14 @@
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://localhost:5432/test"
+}
+
+/// User summary view
+view UserSummary {
+  /// User ID
+  id        Int    @unique
+  /// Display name
+  name      String
+  /// Number of posts
+  postCount Int    @map("post_count")
+}

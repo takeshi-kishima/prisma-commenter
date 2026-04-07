@@ -1,0 +1,40 @@
+{
+  "name": "prisma-commenter",
+  "version": "0.1.0",
+  "description": "Sync Prisma schema /// doc comments to database COMMENT ON statements",
+  "type": "module",
+  "bin": {
+    "prisma-commenter": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "bash integration/run.sh"
+  },
+  "keywords": [
+    "prisma",
+    "comment",
+    "database",
+    "schema"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "@types/pg": "^8.20.0",
+    "prisma": "^6.19.3",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
+  },
+  "dependencies": {
+    "@mrleebo/prisma-ast": "^0.15.0",
+    "@prisma/client": "^6.19.3",
+    "commander": "^14.0.3",
+    "mysql2": "^3.20.0",
+    "pg": "^8.20.0"
+  }
+}

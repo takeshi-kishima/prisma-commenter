@@ -1,0 +1,22 @@
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://localhost:5432/test"
+}
+
+/// Visible model
+model User {
+  /// User ID
+  id     Int    @id
+  /// User name
+  name   String
+  /// Secret field (ignored)
+  secret String @ignore
+}
+
+/// Ignored model
+model InternalLog {
+  id      Int    @id
+  message String
+
+  @@ignore
+}
