@@ -91,7 +91,7 @@ pass "Prisma migrate (PostgreSQL)"
 
 # 2. Dry-run test
 info "Testing --dry-run (PostgreSQL)..."
-DRY_RUN_OUTPUT=$(node dist/index.js --schema integration/postgres/schema.prisma --dry-run 2>&1)
+DRY_RUN_OUTPUT=$(node dist/index.js push --schema integration/postgres/schema.prisma --dry-run 2>&1)
 echo "$DRY_RUN_OUTPUT" | head -5
 info "..."
 
@@ -109,7 +109,7 @@ fi
 
 # 3. Execute comments
 info "Executing prisma-commenter (PostgreSQL)..."
-node dist/index.js --schema integration/postgres/schema.prisma --verbose 2>&1
+node dist/index.js push --schema integration/postgres/schema.prisma --verbose 2>&1
 pass "prisma-commenter executed (PostgreSQL)"
 
 # 4. Verify table comments
@@ -181,7 +181,7 @@ pass "Prisma migrate (MySQL)"
 
 # 2. Dry-run test
 info "Testing --dry-run (MySQL)..."
-DRY_RUN_OUTPUT=$(node dist/index.js --schema integration/mysql/schema.prisma --dry-run 2>&1)
+DRY_RUN_OUTPUT=$(node dist/index.js push --schema integration/mysql/schema.prisma --dry-run 2>&1)
 echo "$DRY_RUN_OUTPUT" | head -5
 info "..."
 
@@ -199,7 +199,7 @@ fi
 
 # 3. Execute comments
 info "Executing prisma-commenter (MySQL)..."
-node dist/index.js --schema integration/mysql/schema.prisma --verbose 2>&1
+node dist/index.js push --schema integration/mysql/schema.prisma --verbose 2>&1
 pass "prisma-commenter executed (MySQL)"
 
 # 4. Verify table comments
