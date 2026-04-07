@@ -143,7 +143,7 @@ COMMENT ON COLUMN "public"."users"."user_name" IS 'Display name';
 
 ## Requirements
 
-- Node.js >= 18
+- Node.js >= 20
 - A valid `datasource` block in your Prisma schema with `provider` set to `postgresql` or `mysql`
 
 ## License
