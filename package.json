@@ -1,6 +1,6 @@
 {
   "name": "prisma-commenter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Sync Prisma schema /// doc comments to database COMMENT ON statements",
   "type": "module",
   "bin": {
@@ -20,6 +20,14 @@
     "schema"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/takeshi-kishima/prisma-commenter.git"
+  },
+  "homepage": "https://github.com/takeshi-kishima/prisma-commenter#readme",
+  "bugs": {
+    "url": "https://github.com/takeshi-kishima/prisma-commenter/issues"
+  },
   "engines": {
     "node": ">=20"
   },
