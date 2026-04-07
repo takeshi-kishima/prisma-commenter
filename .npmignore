@@ -1,0 +1,11 @@
+src/
+tests/
+integration/
+.claude/
+.github/
+docker-compose.yml
+tsconfig.json
+tsup.config.ts
+vitest.config.ts
+PLAN.md
+SPEC.md

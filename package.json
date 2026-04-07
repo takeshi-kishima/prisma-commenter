@@ -4,13 +4,14 @@
   "description": "Sync Prisma schema /// doc comments to database COMMENT ON statements",
   "type": "module",
   "bin": {
-    "prisma-commenter": "./dist/index.js"
+    "prisma-commenter": "dist/index.js"
   },
   "scripts": {
     "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:integration": "bash integration/run.sh"
+    "test:integration": "bash integration/run.sh",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "prisma",
